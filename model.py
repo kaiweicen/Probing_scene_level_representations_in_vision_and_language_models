@@ -127,7 +127,8 @@ def main():
     #rank_vector = np.ones(dset_val.num_entries) * dset_val.num_images
     #count = 0
     for i, batch in tqdm(enumerate(dl_val), total=task2num_iters["Scenedataset"]):
-        batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch)
+        #batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch)
+        batch = tuple(t.to("cpu") for t in batch)
         features, spatials, image_mask, question, input_mask, segment_ids, index = batch
 
         #features = features.squeeze(0)

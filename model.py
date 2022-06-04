@@ -28,7 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 args ={
-"from_pretrained" : "./checkpoints/VL-BERT-CTRL",
+"from_pretrained" : "./checkpoints/Dr8geMQyRd",
 "config_file" : "./config/ctrl_vl-bert_base.json",
 "output_dir" : "results",
 "save_name" : "",

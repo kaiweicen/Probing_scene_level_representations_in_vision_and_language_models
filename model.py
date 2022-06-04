@@ -28,7 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 args ={
-"from_pretrained" : "./checkpoints/Dr8geMQyRd",
+"from_pretrained" : "./checkpoints/VL-BERT-CTRL",
 "config_file" : "./config/ctrl_vl-bert_base.json",
 "output_dir" : "results",
 "save_name" : "",
@@ -122,41 +122,28 @@ def main():
     model.eval()
     results = []
     others = []
-    #score_matrix = np.zeros((dset_val.num_entries, dset_val.num_images))
-    #target_matrix = np.zeros((dset_val.num_entries, dset_val.num_images))
-    #rank_vector = np.ones(dset_val.num_entries) * dset_val.num_images
-    #count = 0
+
     for i, batch in tqdm(enumerate(dl_val), total=task2num_iters["Scenedataset"]):
-        #batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch)
-        batch = tuple(t.to("cpu") for t in batch)
-        features, spatials, image_mask, question, input_mask, segment_ids, index = batch
+        batch = tuple(t.cuda(device=device, non_blocking=True) for t in batch)
+        features, spatials, image_mask, question, input_mask, segment_ids, image_index = batch
 
-        #features = features.squeeze(0)
-        #spatials = spatials.squeeze(0)
-        #image_mask = image_mask.squeeze(0)
-        #question = question.repeat(features.size(0), 1)
-        #segment_ids = segment_ids.repeat(features.size(0), 1)
-        #input_mask = input_mask.repeat(features.size(0), 1)
-
-        #target = target.view(-1).float().cpu().numpy()
         with torch.no_grad():
             if args["zero_shot"]:
                 #_, _, vil_logit, _, _ = model(question, features, spatials, segment_ids, input_mask, image_mask, index)
+
                 prediction_scores_t, prediction_scores_v_dict, seq_relationship_score, vqa_score, \
                    all_attention_mask, pooled_output = model(question, features, spatials, segment_ids, input_mask, image_mask)
-                #print("prediction_scores_t")
-                #print(prediction_scores_t)
-                print("prediction_scores_v_dict")
-                print(prediction_scores_v_dict)
-                #print("seq_relationship_score")
-                #print(seq_relationship_score)
-                #print("vqa_score")
-                #print(vqa_score)
-                #print("all_attention_mask")
-                #print(all_attention_mask)
-                #print("pooled_output")
-                #print(pooled_output)
 
+                logits = seq_relationship_score
+                for i, logit in enumerate(logits.size(1)):
+                    results.append(
+                        {
+                            "image_id": image_index,
+                            "logits": logit,
+                        }
+                    )
+
+    print(results)
 
 
 if __name__ == "__main__":

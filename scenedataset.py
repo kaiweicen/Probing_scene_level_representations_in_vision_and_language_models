@@ -9,6 +9,7 @@ import json
 import pickle
 import logging
 import copy
+import random
 
 import numpy as np
 import torch
@@ -27,18 +28,27 @@ def _load_dataset(dataroot):
 
     """
 
-    question_path_test = os.path.join(dataroot,"HL_test.json")
-    questions_test = json.load(open(question_path_test))["data"]
+    #captions = os.path.join("/Users/cenkaiwei/Documents/volta_Probing task/data/mscoco/annotations/coco_train_ann.jsonl")
+    #questions_test = json.load(open(question_path_test))["data"]
 
     entries = []
     image_entries = []
-    for question in questions_test:
-        for i,scene in enumerate(questions_test[question]["place"]):
+
+    #for caption in captions:
+        #print(caption)
+
+    filepath = "./data/mscoco/annotations/coco_train_ann.jsonl"
+
+    with open(filepath) as f:
+        for i, line in enumerate(f.readlines()):
+            obj = json.loads(line)
             image_caption = {}
-            image_caption["image"] = question
-            image_caption["scene"] = questions_test[question]["place"][i]
+            caption = []
+            image_caption["image"] = obj["id"]
+            caption = obj["sentences"]
+            image_caption["caption"] = random.sample(caption,1)
             entries.append(image_caption)
-            #image_entries.append(question.strip(".jpg"))
+            # image_entries.append(question.strip(".jpg"))
 
         """
         {'COCO_train2014_000000138878.jpg': {'action': ['posing for a photo', 'the person is posing for a photo', "he's sitting in an armchair."], 
@@ -49,7 +59,7 @@ def _load_dataset(dataroot):
         """
         {'image': 'COCO_train2014_000000138878.jpg', 'place': ['in a car']}
         """
-
+    #print(entries)
     return entries
 
 
@@ -153,7 +163,7 @@ class SceneDataset(Dataset):
         -1 represent nil, and should be treated as padding_index in embedding
         """
         for entry in self.entries:
-            tokens = self._tokenizer.encode(entry["scene"])
+            tokens = self._tokenizer.encode(entry["caption"])
             tokens = [tokens[0]] + tokens[1:-1][: self._max_seq_length - 2] + [tokens[-1]]
             segment_ids = [0] * len(tokens)
             input_mask = [1] * len(tokens)
@@ -191,6 +201,7 @@ class SceneDataset(Dataset):
 
     def __getitem__(self,index):
         entry = self.entries[index]
+        image_jpg = entry["image"]
         image_id = entry["image"].strip(".jpg")
         #print(image_id)
         data_features_root = "./features/test/"
@@ -263,8 +274,9 @@ class SceneDataset(Dataset):
         #print(segment_ids)
 
 
-        return features, spatials, image_mask, question, input_mask, segment_ids, index
+        return features, spatials, image_mask, question, input_mask, segment_ids, image_jpg
 
     def __len__(self):
         return len(self.entries)
+
 
